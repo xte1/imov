@@ -1,5 +1,6 @@
 name: iMOV
 options:
+  xcodeVersion: "15.4"
   objectVersion: 56
 targets:
   iMOV:
