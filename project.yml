@@ -1,4 +1,6 @@
 name: iMOV
+options:
+  objectVersion: 56
 targets:
   iMOV:
     type: application
