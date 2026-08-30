@@ -9,6 +9,7 @@ struct MovieSite: Identifiable, Hashable {
 struct ContentView: View {
     @AppStorage("lastURL") private var currentURLString: String = "https://cinejoy.com"
     @AppStorage("selectedSiteName") private var selectedSiteName: String = "Cinejoy"
+    @AppStorage("isDarkMode") private var isDarkMode: Bool = true
     
     @State private var showDeveloperPage = false
     @State private var showSettingsPage = false
@@ -55,7 +56,7 @@ struct ContentView: View {
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
                     .background(Material.ultraThinMaterial, in: Capsule())
-                    .overlay(Capsule().stroke(Color.white.opacity(0.2), lineWidth: 1))
+                    .overlay(Capsule().stroke(Color.primary.opacity(0.2), lineWidth: 1))
                     .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
                 }
 
@@ -75,13 +76,14 @@ struct ContentView: View {
                         .foregroundColor(.primary)
                         .padding(12)
                         .background(Material.ultraThinMaterial, in: Circle())
-                        .overlay(Circle().stroke(Color.white.opacity(0.2), lineWidth: 1))
+                        .overlay(Circle().stroke(Color.primary.opacity(0.2), lineWidth: 1))
                         .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
                 }
             }
             .padding(.horizontal, 16)
             .padding(.top, 50)
         }
+        .preferredColorScheme(isDarkMode ? .dark : .light)
         .sheet(isPresented: $showDeveloperPage) {
             DeveloperView()
         }
