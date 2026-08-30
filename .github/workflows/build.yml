@@ -7,11 +7,14 @@ on:
 
 jobs:
   build:
-    runs-on: macos-15
+    runs-on: macos-14
 
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
+
+    - name: Select Xcode Version
+      run: sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
 
     - name: Install XcodeGen
       run: brew install xcodegen
@@ -19,19 +22,16 @@ jobs:
     - name: Generate Xcode Project
       run: xcodegen generate
 
-    - name: Force Compatible Xcode Format
-      run: |
-        sed -i '' 's/objectVersion = [0-9]*;/objectVersion = 56;/g' iMOV.xcodeproj/project.pbxproj
-
     - name: Build Archive
       run: |
         xcodebuild archive \
           -project iMOV.xcodeproj \
           -scheme iMOV \
-          -sdk iphoneos \
+          -destination 'generic/platform=iOS' \
           -archivePath build/iMOV.xcarchive \
           CODE_SIGNING_ALLOWED=NO \
-          CODE_SIGNING_REQUIRED=NO
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGN_IDENTITY=""
 
     - name: Package to IPA
       run: |
