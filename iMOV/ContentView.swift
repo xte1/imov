@@ -2,90 +2,73 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var tmdbService = TMDBService()
-    @AppStorage("isDarkMode") private var isDarkMode: Bool = true
-    
-    @State private var showDeveloperPage = false
-    @State private var showSettingsPage = false
-    
-    let columns = [
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12)
-    ]
+    @State private var searchQuery = ""
+    @State private var selectedMovie: Movie?
+
+    let columns = [GridItem(.flexible()), GridItem(.flexible())]
 
     var body: some View {
         NavigationView {
-            ZStack {
-                Color(uiColor: isDarkMode ? .black : .systemGroupedBackground)
-                    .ignoresSafeArea()
-                
-                if tmdbService.isLoading {
-                    ProgressView("جاري تحميل الأفلام...")
-                        .tint(.blue)
-                } else {
-                    ScrollView {
-                        LazyVGrid(columns: columns, spacing: 16) {
-                            ForEach(tmdbService.movies) { movie in
-                                VStack(alignment: .leading) {
-                                    AsyncImage(url: movie.posterURL) { image in
-                                        image
-                                            .resizable()
-                                            .aspectRatio(contentMode: .fill)
-                                    } placeholder: {
-                                        Rectangle()
-                                            .fill(Color.gray.opacity(0.3))
-                                    }
-                                    .frame(height: 240)
-                                    .cornerRadius(12)
-                                    .clipped()
-                                    
-                                    Text(movie.displayTitle)
-                                        .font(.system(size: 14, weight: .bold))
-                                        .lineLimit(1)
-                                        .foregroundColor(.primary)
-                                        .padding(.horizontal, 4)
-                                    
-                                    HStack {
-                                        Image(systemName: "star.fill")
-                                            .foregroundColor(.yellow)
-                                            .font(.caption)
-                                        Text(String(format: "%.1f", movie.voteAverage ?? 0.0))
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                    }
-                                    .padding(.horizontal, 4)
+            VStack {
+                // شريط البحث
+                HStack {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(.gray)
+                    TextField("بحث عن فيلم...", text: $searchQuery)
+                        .onChange(of: searchQuery) { newValue in
+                            tmdbService.searchMovies(query: newValue)
+                        }
+                }
+                .padding()
+                .background(Color(.systemGray6))
+                .cornerRadius(10)
+                .padding(.horizontal)
+
+                // عرض شبكة الأفلام
+                ScrollView {
+                    LazyVGrid(columns: columns, spacing: 15) {
+                        ForEach(tmdbService.movies) { movie in
+                            VStack(alignment: .leading) {
+                                AsyncImage(url: movie.posterURL) { image in
+                                    image.resizable()
+                                         .aspectRatio(contentMode: .fill)
+                                } placeholder: {
+                                    Rectangle().fill(Color.gray.opacity(0.3))
+                                }
+                                .frame(height: 220)
+                                .cornerRadius(10)
+                                .clipped()
+
+                                Text(movie.title)
+                                    .font(.headline)
+                                    .foregroundColor(.white)
+                                    .lineLimit(1)
+
+                                HStack {
+                                    Image(systemName: "star.fill")
+                                        .foregroundColor(.yellow)
+                                    Text(String(format: "%.1f", movie.voteAverage))
+                                        .foregroundColor(.gray)
                                 }
                             }
+                            .onTapGesture {
+                                selectedMovie = movie
+                            }
                         }
-                        .padding(16)
                     }
+                    .padding()
                 }
             }
             .navigationTitle("iMOV")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Menu {
-                        Button(action: { showDeveloperPage = true }) {
-                            Label("معلومات المطور", systemImage: "person.circle")
-                        }
-                        Button(action: { showSettingsPage = true }) {
-                            Label("الإعدادات", systemImage: "gearshape")
-                        }
-                    } label: {
-                        Image(systemName: "gearshape.fill")
-                            .foregroundColor(.primary)
-                    }
+            .onAppear {
+                tmdbService.fetchPopularMovies()
+            }
+            // فتح صفحة التشغيل عند النقر على الفيلم
+            .sheet(item: $selectedMovie) { movie in
+                if let streamURL = URL(string: "https://vidsrc.to/embed/movie/\(movie.id)") { // سيرفر تجريبي للمشاهدة
+                    WebView(url: streamURL)
                 }
             }
-        }
-        .preferredColorScheme(isDarkMode ? .dark : .light)
-        .onAppear {
-            tmdbService.fetchTrending()
-        }
-        .sheet(isPresented: $showDeveloperPage) {
-            DeveloperView()
-        }
-        .sheet(isPresented: $showSettingsPage) {
-            SettingsView()
         }
     }
 }
