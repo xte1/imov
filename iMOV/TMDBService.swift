@@ -2,15 +2,14 @@ import Foundation
 
 struct Movie: Identifiable, Codable {
     let id: Int
-    let title: String?
-    let name: String?
-    let overview: String?
+    let title: String
     let posterPath: String?
-    let backdropPath: String?
-    let voteAverage: Double?
+    let voteAverage: Double
     
-    var displayTitle: String {
-        title ?? name ?? "بدون عنوان"
+    enum CodingKeys: String, CodingKey {
+        case id, title
+        case posterPath = "poster_path"
+        case voteAverage = "vote_average"
     }
     
     var posterURL: URL? {
@@ -19,28 +18,39 @@ struct Movie: Identifiable, Codable {
     }
 }
 
-struct TMDBResponse: Codable {
+struct MovieResponse: Codable {
     let results: [Movie]
 }
 
 class TMDBService: ObservableObject {
     @Published var movies: [Movie] = []
-    @Published var isLoading = false
+    private let apiKey = "YOUR_TMDB_API_KEY" // ضع مفتاحك هنا
     
-    private let apiKey = "12bae60f08973cb30c741d0844769d9d"
-    private let baseURL = "https://api.themoviedb.org/3"
+    // جلب الأفلام الشائعة
+    func fetchPopularMovies() {
+        guard let url = URL(string: "https://api.themoviedb.org/3/movie/popular?api_key=\(apiKey)&language=ar-SA") else { return }
+        performRequest(with: url)
+    }
     
-    func fetchTrending() {
-        guard let url = URL(string: "\(baseURL)/trending/all/day?api_key=\(apiKey)&language=ar") else { return }
-        
-        isLoading = true
+    // ميزة البحث عن فيلم
+    func searchMovies(query: String) {
+        guard !query.isEmpty else {
+            fetchPopularMovies()
+            return
+        }
+        let encodedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        guard let url = URL(string: "https://api.themoviedb.org/3/search/movie?api_key=\(apiKey)&query=\(encodedQuery)&language=ar-SA") else { return }
+        performRequest(with: url)
+    }
+    
+    private func performRequest(with url: URL) {
         URLSession.shared.dataTask(with: url) { data, _, error in
-            DispatchQueue.main.async {
-                self.isLoading = false
-                guard let data = data, error == nil else { return }
+            if let data = data {
                 do {
-                    let response = try JSONDecoder().decode(TMDBResponse.self, from: data)
-                    self.movies = response.results
+                    let decoded = try JSONDecoder().decode(MovieResponse.self, from: data)
+                    DispatchQueue.main.async {
+                        self.movies = decoded.results
+                    }
                 } catch {
                     print("Error decoding: \(error)")
                 }
