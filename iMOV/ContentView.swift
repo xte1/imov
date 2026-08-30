@@ -1,89 +1,86 @@
 import SwiftUI
 
-struct MovieSite: Identifiable, Hashable {
-    let id = UUID()
-    let name: String
-    let url: String
-}
-
 struct ContentView: View {
-    @AppStorage("lastURL") private var currentURLString: String = "https://cinejoy.com"
-    @AppStorage("selectedSiteName") private var selectedSiteName: String = "Cinejoy"
+    @StateObject private var tmdbService = TMDBService()
     @AppStorage("isDarkMode") private var isDarkMode: Bool = true
     
     @State private var showDeveloperPage = false
     @State private var showSettingsPage = false
     
-    let sites: [MovieSite] = [
-        MovieSite(name: "Cinejoy", url: "https://cinejoy.com"),
-        MovieSite(name: "فيديو فيولا", url: "https://videoviola.com"),
-        MovieSite(name: "Akwam", url: "https://akwam.to"),
-        MovieSite(name: "Wecima", url: "https://wecima.show"),
-        MovieSite(name: "Krmzi", url: "https://krmzi.com"),
-        MovieSite(name: "Starcima", url: "https://starcima.com")
+    let columns = [
+        GridItem(.flexible(), spacing: 12),
+        GridItem(.flexible(), spacing: 12)
     ]
 
     var body: some View {
-        ZStack(alignment: .top) {
-            WebView(urlString: $currentURLString)
-                .ignoresSafeArea()
-
-            HStack {
-                Menu {
-                    ForEach(sites) { site in
-                        Button(action: {
-                            selectedSiteName = site.name
-                            currentURLString = site.url
-                        }) {
-                            HStack {
-                                Text(site.name)
-                                if selectedSiteName == site.name {
-                                    Image(systemName: "checkmark")
+        NavigationView {
+            ZStack {
+                Color(uiColor: isDarkMode ? .black : .systemGroupedBackground)
+                    .ignoresSafeArea()
+                
+                if tmdbService.isLoading {
+                    ProgressView("جاري تحميل الأفلام...")
+                        .tint(.blue)
+                } else {
+                    ScrollView {
+                        LazyVGrid(columns: columns, spacing: 16) {
+                            ForEach(tmdbService.movies) { movie in
+                                VStack(alignment: .leading) {
+                                    AsyncImage(url: movie.posterURL) { image in
+                                        image
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fill)
+                                    } placeholder: {
+                                        Rectangle()
+                                            .fill(Color.gray.opacity(0.3))
+                                    }
+                                    .frame(height: 240)
+                                    .cornerRadius(12)
+                                    .clipped()
+                                    
+                                    Text(movie.displayTitle)
+                                        .font(.system(size: 14, weight: .bold))
+                                        .lineLimit(1)
+                                        .foregroundColor(.primary)
+                                        .padding(.horizontal, 4)
+                                    
+                                    HStack {
+                                        Image(systemName: "star.fill")
+                                            .foregroundColor(.yellow)
+                                            .font(.caption)
+                                        Text(String(format: "%.1f", movie.voteAverage ?? 0.0))
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                    }
+                                    .padding(.horizontal, 4)
                                 }
                             }
                         }
+                        .padding(16)
                     }
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "tv")
-                            .font(.system(size: 14, weight: .semibold))
-                        Text(selectedSiteName)
-                            .font(.system(size: 15, weight: .bold))
-                        Image(systemName: "chevron.down")
-                            .font(.system(size: 10, weight: .bold))
-                    }
-                    .foregroundColor(.primary)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .background(Material.ultraThinMaterial, in: Capsule())
-                    .overlay(Capsule().stroke(Color.primary.opacity(0.2), lineWidth: 1))
-                    .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
-                }
-
-                Spacer()
-
-                Menu {
-                    Button(action: { showDeveloperPage = true }) {
-                        Label("معلومات المطور", systemImage: "person.circle")
-                    }
-                    
-                    Button(action: { showSettingsPage = true }) {
-                        Label("الإعدادات", systemImage: "gearshape")
-                    }
-                } label: {
-                    Image(systemName: "gearshape.fill")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.primary)
-                        .padding(12)
-                        .background(Material.ultraThinMaterial, in: Circle())
-                        .overlay(Circle().stroke(Color.primary.opacity(0.2), lineWidth: 1))
-                        .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 50)
+            .navigationTitle("iMOV")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Menu {
+                        Button(action: { showDeveloperPage = true }) {
+                            Label("معلومات المطور", systemImage: "person.circle")
+                        }
+                        Button(action: { showSettingsPage = true }) {
+                            Label("الإعدادات", systemImage: "gearshape")
+                        }
+                    } label: {
+                        Image(systemName: "gearshape.fill")
+                            .foregroundColor(.primary)
+                    }
+                }
+            }
         }
         .preferredColorScheme(isDarkMode ? .dark : .light)
+        .onAppear {
+            tmdbService.fetchTrending()
+        }
         .sheet(isPresented: $showDeveloperPage) {
             DeveloperView()
         }
