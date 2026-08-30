@@ -1,0 +1,42 @@
+name: Build iMOV IPA
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Install XcodeGen
+      run: brew install xcodegen
+
+    - name: Generate Xcode Project
+      run: xcodegen generate
+
+    - name: Build Archive
+      run: |
+        xcodebuild archive \
+          -project iMOV.xcodeproj \
+          -scheme iMOV \
+          -sdk iphoneos \
+          -archivePath build/iMOV.xcarchive \
+          CODE_SIGNING_ALLOWED=NO \
+          CODE_SIGNING_REQUIRED=NO
+
+    - name: Package to IPA
+      run: |
+        mkdir -p Payload
+        cp -r build/iMOV.xcarchive/Products/Applications/iMOV.app Payload/
+        zip -r iMOV.ipa Payload
+
+    - name: Upload IPA Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: iMOV-Unsigned-IPA
+        path: iMOV.ipa
