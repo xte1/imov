@@ -63,11 +63,11 @@ struct ContentView: View {
 
                 Menu {
                     Button(action: { showDeveloperPage = true }) {
-                        Label("معلومات المطور", systemName: "person.circle")
+                        Label("معلومات المطور", systemImage: "person.circle")
                     }
                     
                     Button(action: { showSettingsPage = true }) {
-                        Label("الإعدادات", systemName: "gearshape")
+                        Label("الإعدادات", systemImage: "gearshape")
                     }
                 } label: {
                     Image(systemName: "gearshape.fill")
