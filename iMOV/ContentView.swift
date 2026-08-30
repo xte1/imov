@@ -24,13 +24,10 @@ struct ContentView: View {
 
     var body: some View {
         ZStack(alignment: .top) {
-            // صفحة الويب مدمجة على كامل الشاشة خلف القوائم الزجاجية
             WebView(urlString: $currentURLString)
                 .ignoresSafeArea()
 
-            // الشريط العلوي الزجاجي العائم فوق الويب مباشرة
             HStack {
-                // قائمة اختيار المواقع
                 Menu {
                     ForEach(sites) { site in
                         Button(action: {
@@ -57,14 +54,13 @@ struct ContentView: View {
                     .foregroundColor(.primary)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
-                    .background(.ultraThinMaterial, in: Capsule())
+                    .background(Material.ultraThinMaterial, in: Capsule())
                     .overlay(Capsule().stroke(Color.white.opacity(0.2), lineWidth: 1))
-                    .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
+                    .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
                 }
 
                 Spacer()
 
-                // قائمة الإعدادات والمطور
                 Menu {
                     Button(action: { showDeveloperPage = true }) {
                         Label("معلومات المطور", systemName: "person.circle")
@@ -78,9 +74,9 @@ struct ContentView: View {
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(.primary)
                         .padding(12)
-                        .background(.ultraThinMaterial, in: Circle())
+                        .background(Material.ultraThinMaterial, in: Circle())
                         .overlay(Circle().stroke(Color.white.opacity(0.2), lineWidth: 1))
-                        .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
+                        .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
                 }
             }
             .padding(.horizontal, 16)
